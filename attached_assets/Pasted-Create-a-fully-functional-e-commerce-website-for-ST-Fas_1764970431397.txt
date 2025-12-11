@@ -1,0 +1,157 @@
+Create a fully functional e-commerce website for ST Fashions with two interfaces: Customer and Admin.
+
+BRAND DETAILS:
+- Business Name: ST Fashions (Sannidhi & Tanisha Fashions)
+- Logo: "ST" in stylized font
+- Tagline: "Sannidhi & Tanisha Fashions"
+- Contact: 9742654155
+- Email: Pragatihulgeri@gmail.com
+- Instagram: pragatihulgeri
+- Address: KMF Nandhini Dairy, Behind DCC Bank, Sector No 8, CTS 6481, Anjaneya Nagar Belgaum 590016
+- Products: Sarees, Aari Work Blouses, Ready Made Blouses, Ladies Fancy Items, Stationery
+
+COLOR SCHEME:
+- Primary: Hot Pink/Magenta (#E91E63)
+- Secondary: Gold/Yellow (#FFC107)
+- Accent: Purple (#9C27B0)
+- Use elegant, modern Indian fashion aesthetic
+
+TECHNICAL REQUIREMENTS:
+
+1. CUSTOMER INTERFACE:
+   - Homepage with banner (use brand colors and logo)
+   - Product categories: Sarees, Aari Work Blouses, Ready Made Blouses, Ladies Fancy Items, Stationery
+   - Product grid with image, name, price, "Add to Cart" button
+   - Product detail page with:
+     * Image gallery (multiple images, zoom in/out functionality)
+     * Size selector dropdown
+     * Color selector (visual swatches)
+     * Quantity selector
+     * Add to Cart button
+   - Shopping cart with:
+     * Product list, quantities, subtotal
+     * Remove items option
+     * Proceed to Checkout button
+   - Checkout page with form:
+     * Full Name (required)
+     * Phone Number (required, 10 digits)
+     * Date of Birth (DD/MM/YYYY format)
+     * Full Address (textarea, required)
+     * PIN Code (required, 6 digits)
+     * Alternative Phone Number (optional)
+   - User authentication:
+     * Sign up with: Name, Phone (10 digits), Password, Confirm Password
+     * Login with: Phone, Password
+     * Simple validation only (no OTP)
+   - Order confirmation page after successful order
+   - Responsive design for mobile and desktop
+
+2. ADMIN INTERFACE:
+   - Route: /admin
+   - Login page with:
+     * Username: admin
+     * Temporary Password: STFashion@2024
+     * Include "Change Password" option after first login
+   - Dashboard showing:
+     * Total products
+     * Recent orders count
+     * Quick stats
+   - Add Product form:
+     * Product Name
+     * Category (dropdown: Sarees, Aari Work Blouses, Ready Made Blouses, Ladies Fancy Items, Stationery)
+     * Description (textarea)
+     * Price (number)
+     * Sizes (multi-input: XS, S, M, L, XL, XXL, Free Size)
+     * Colors (multi-input field)
+     * Upload Multiple Images (Cloudinary integration)
+     * Stock Quantity
+   - View All Products page (table with edit/delete options)
+   - View All Orders page:
+     * Table showing order details
+     * Order status dropdown (Pending, Confirmed, Packed, Shipped, Delivered)
+     * Update status button
+
+3. BACKEND INTEGRATION:
+
+   A. Google Sheets Integration:
+   - Use Google Sheets API for data storage
+   - Products stored in "ST_Fashions_Products" sheet
+   - Orders stored in "ST_Fashions_Orders" sheet
+   - Install: google-auth-library, googleapis
+   - Use service account JSON for authentication
+   - Format columns as specified in setup guide
+   
+   B. Cloudinary Integration:
+   - Upload product images to Cloudinary
+   - Store image URLs in Google Sheets
+   - Install: cloudinary
+   - Use provided API credentials
+   
+   C. Session Management:
+   - Use express-session for login sessions
+   - Separate sessions for customers and admin
+
+4. PROJECT STRUCTURE:
+/
+├── server.js (Express backend)
+├── package.json
+├── .env (for API keys - DO NOT COMMIT)
+├── public/
+│   ├── index.html (Customer homepage)
+│   ├── products.html
+│   ├── product-detail.html
+│   ├── cart.html
+│   ├── checkout.html
+│   ├── login.html
+│   ├── signup.html
+│   ├── admin-login.html
+│   ├── admin-dashboard.html
+│   ├── admin-products.html
+│   ├── admin-orders.html
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       ├── main.js
+│       ├── cart.js
+│       └── admin.js
+└── credentials.json (Google service account key)
+
+5. ENVIRONMENT VARIABLES NEEDED (.env file):
+GOOGLE_SHEETS_PRODUCTS_ID=<products_sheet_id>
+GOOGLE_SHEETS_ORDERS_ID=<orders_sheet_id>
+CLOUDINARY_CLOUD_NAME=<cloud_name>
+CLOUDINARY_API_KEY=<api_key>
+CLOUDINARY_API_SECRET=<api_secret>
+SESSION_SECRET=STFashions_Secret_2024
+ADMIN_PASSWORD=STFashion@2024
+
+6. KEY FEATURES:
+   - Product image zoom (lightbox effect)
+   - Cart persists in localStorage
+   - Form validation with Indian formats (phone, PIN, date)
+   - Responsive navbar with categories
+   - Search functionality
+   - Order confirmation with order ID
+   - Admin can update order status
+   - Clean, modern UI with brand colors
+
+7. NPM PACKAGES TO INSTALL:
+express
+googleapis
+google-auth-library
+cloudinary
+express-session
+body-parser
+multer
+dotenv
+
+8. SECURITY:
+   - Hash admin password
+   - Validate all inputs
+   - Sanitize user data
+   - Secure session management
+   - Rate limiting on forms
+
+Please create this complete working website with all HTML, CSS, JavaScript, and Node.js backend code. Make it production-ready with error handling and user-friendly messages.
+
+Use the ST Fashions brand colors (pink, gold, purple) throughout the design with elegant Indian fashion aesthetic similar to Myntra's UI but with ST Fashions branding.

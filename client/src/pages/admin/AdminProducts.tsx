@@ -1,24 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Loader2, 
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
   Search,
   Package,
   X,
-  Upload,
-  ImagePlus
+  ImagePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -64,13 +62,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  type Product, 
+import {
+  type Product,
   type InsertProduct,
   insertProductSchema,
   CATEGORIES,
-  SIZES 
+  SIZES,
 } from "@shared/schema";
+import { StockBadge } from "@/components/admin/StockBadge";
+// Category specific options
+const SAREE_TYPES = [
+  "Silk Sarees",
+  "Cotton Sarees",
+  "Ilkal Sarees",
+  "Banarasi Sarees",
+  "Designer Sarees",
+];
+
+const BLOUSE_MATERIAL_TYPES = ["Cotton", "Silk", "Raw Silk", "Brocade", "Net"];
+
+const READY_BLOUSE_TYPES = ["Padded", "Non-Padded", "Front Open", "Back Open"];
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -89,6 +100,7 @@ export default function AdminProducts() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [colorInput, setColorInput] = useState("");
   const [imageInput, setImageInput] = useState("");
+  const [stockByColor, setStockByColor] = useState<Record<string, number>>({});
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -101,12 +113,21 @@ export default function AdminProducts() {
       category: "Sarees",
       description: "",
       price: 0,
-      sizes: [],
       colors: [],
       images: [],
-      stock: 0,
     },
   });
+
+  useEffect(() => {
+    const colors = form.watch("colors");
+    setStockByColor((prev) => {
+      const next: Record<string, number> = {};
+      colors.forEach((color) => {
+        next[color] = prev[color] ?? 0;
+      });
+      return next;
+    });
+  }, [form.watch("colors")]);
 
   const resetForm = () => {
     form.reset({
@@ -117,7 +138,6 @@ export default function AdminProducts() {
       sizes: [],
       colors: [],
       images: [],
-      stock: 0,
     });
     setColorInput("");
     setImageInput("");
@@ -138,7 +158,6 @@ export default function AdminProducts() {
       sizes: product.sizes,
       colors: product.colors,
       images: product.images,
-      stock: product.stock,
     });
     setEditingProduct(product);
     setIsAddDialogOpen(true);
@@ -207,10 +226,24 @@ export default function AdminProducts() {
   });
 
   const onSubmit = (data: InsertProduct) => {
+    if (form.watch("colors").some((c) => stockByColor[c] === undefined)) {
+      toast({
+        title: "Missing stock",
+        description: "Please enter stock for all colors",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payload = {
+      ...data,
+      stockByColor,
+    };
+
     if (editingProduct) {
-      updateMutation.mutate({ id: editingProduct.id, data });
+      updateMutation.mutate({ id: editingProduct.id, data: payload });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(payload);
     }
   };
 
@@ -223,7 +256,10 @@ export default function AdminProducts() {
   };
 
   const removeColor = (color: string) => {
-    form.setValue("colors", form.getValues("colors").filter(c => c !== color));
+    form.setValue(
+      "colors",
+      form.getValues("colors").filter((c) => c !== color),
+    );
   };
 
   const addImage = () => {
@@ -235,23 +271,21 @@ export default function AdminProducts() {
   };
 
   const removeImage = (image: string) => {
-    form.setValue("images", form.getValues("images").filter(i => i !== image));
+    form.setValue(
+      "images",
+      form.getValues("images").filter((i) => i !== image),
+    );
   };
 
-  const toggleSize = (size: string) => {
-    const currentSizes = form.getValues("sizes");
-    if (currentSizes.includes(size as any)) {
-      form.setValue("sizes", currentSizes.filter(s => s !== size));
-    } else {
-      form.setValue("sizes", [...currentSizes, size as any]);
-    }
-  };
-
-  const filteredProducts = products?.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  }) || [];
+  const filteredProducts =
+    products?.filter((product) => {
+      const matchesSearch = product.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        categoryFilter === "all" || product.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    }) || [];
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
@@ -283,13 +317,20 @@ export default function AdminProducts() {
                 />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[180px] bg-slate-700 border-slate-600 text-white" data-testid="select-category-filter">
+                <SelectTrigger
+                  className="w-[180px] bg-slate-700 border-slate-600 text-white"
+                  data-testid="select-category-filter"
+                >
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="all" className="text-white">All Categories</SelectItem>
-                  {CATEGORIES.map(cat => (
-                    <SelectItem key={cat} value={cat} className="text-white">{cat}</SelectItem>
+                  <SelectItem value="all" className="text-white">
+                    All Categories
+                  </SelectItem>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat} className="text-white">
+                      {cat}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -298,7 +339,7 @@ export default function AdminProducts() {
           <CardContent>
             {isLoading ? (
               <div className="space-y-4">
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-16 w-full bg-slate-700" />
                 ))}
               </div>
@@ -318,20 +359,22 @@ export default function AdminProducts() {
                       <TableHead className="text-slate-400">Category</TableHead>
                       <TableHead className="text-slate-400">Price</TableHead>
                       <TableHead className="text-slate-400">Stock</TableHead>
-                      <TableHead className="text-slate-400 text-right">Actions</TableHead>
+                      <TableHead className="text-slate-400 text-right">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredProducts.map((product) => (
-                      <TableRow 
-                        key={product.id} 
+                      <TableRow
+                        key={product.id}
                         className="border-slate-700"
                         data-testid={`product-row-${product.id}`}
                       >
                         <TableCell>
                           {product.images[0] ? (
-                            <img 
-                              src={product.images[0]} 
+                            <img
+                              src={product.images[0]}
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded-md"
                             />
@@ -341,20 +384,32 @@ export default function AdminProducts() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium text-white">{product.name}</TableCell>
+                        <TableCell className="font-medium text-white">
+                          {product.name}
+                        </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-slate-300 border-slate-600">
+                          <Badge
+                            variant="outline"
+                            className="text-slate-300 border-slate-600"
+                          >
                             {product.category}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-gold">{formatCurrency(product.price)}</TableCell>
+                        <TableCell className="text-gold">
+                          {formatCurrency(product.price)}
+                        </TableCell>
                         <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={product.stock > 0 ? "text-green-400 border-green-500/30" : "text-red-400 border-red-500/30"}
-                          >
-                            {product.stock}
-                          </Badge>
+                          <div className="flex flex-wrap">
+                            {Object.entries(product.stockByColor || {}).map(
+                              ([color, qty]) => (
+                                <StockBadge
+                                  key={color}
+                                  color={color}
+                                  qty={qty}
+                                />
+                              ),
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -395,7 +450,9 @@ export default function AdminProducts() {
               {editingProduct ? "Edit Product" : "Add New Product"}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              {editingProduct ? "Update the product details below" : "Fill in the details to add a new product"}
+              {editingProduct
+                ? "Update the product details below"
+                : "Fill in the details to add a new product"}
             </DialogDescription>
           </DialogHeader>
 
@@ -407,9 +464,11 @@ export default function AdminProducts() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Product Name</FormLabel>
+                      <FormLabel className="text-slate-300">
+                        Product Name
+                      </FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           placeholder="Enter product name"
                           className="bg-slate-700 border-slate-600 text-white"
                           {...field}
@@ -427,15 +486,27 @@ export default function AdminProducts() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-slate-300">Category</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
-                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="select-product-category">
+                          <SelectTrigger
+                            className="bg-slate-700 border-slate-600 text-white"
+                            data-testid="select-product-category"
+                          >
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-slate-700 border-slate-600">
-                          {CATEGORIES.map(cat => (
-                            <SelectItem key={cat} value={cat} className="text-white">{cat}</SelectItem>
+                          {CATEGORIES.map((cat) => (
+                            <SelectItem
+                              key={cat}
+                              value={cat}
+                              className="text-white"
+                            >
+                              {cat}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -449,38 +520,20 @@ export default function AdminProducts() {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Price (INR)</FormLabel>
+                      <FormLabel className="text-slate-300">
+                        Price (INR)
+                      </FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           type="number"
                           min="0"
                           placeholder="0"
                           className="bg-slate-700 border-slate-600 text-white"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                           data-testid="input-product-price"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-300">Stock Quantity</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="bg-slate-700 border-slate-600 text-white"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          data-testid="input-product-stock"
                         />
                       </FormControl>
                       <FormMessage />
@@ -494,9 +547,11 @@ export default function AdminProducts() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">Description</FormLabel>
+                    <FormLabel className="text-slate-300">
+                      Description
+                    </FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         placeholder="Enter product description"
                         className="bg-slate-700 border-slate-600 text-white resize-none"
                         rows={3}
@@ -508,37 +563,151 @@ export default function AdminProducts() {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="sizes"
-                render={() => (
-                  <FormItem>
-                    <FormLabel className="text-slate-300">Available Sizes</FormLabel>
-                    <div className="flex flex-wrap gap-2">
-                      {SIZES.map(size => (
-                        <Button
-                          key={size}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleSize(size)}
-                          className={`
-                            ${form.watch("sizes").includes(size as any) 
-                              ? "bg-primary text-primary-foreground border-primary" 
-                              : "bg-slate-700 text-slate-300 border-slate-600"
-                            }
-                          `}
-                          data-testid={`button-size-${size}`}
+              {form.watch("category") === "Sarees" && (
+                <FormField
+                  control={form.control}
+                  name="sareeType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-300">
+                        Saree Type
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                            <SelectValue placeholder="Select saree type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-slate-700 border-slate-600">
+                          {SAREE_TYPES.map((type) => (
+                            <SelectItem
+                              key={type}
+                              value={type}
+                              className="text-white"
+                            >
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {form.watch("category") === "Blouse Materials" && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="blouseMaterialType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-300">
+                          Blouse Material Type
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
                         >
-                          {size}
-                        </Button>
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                          <FormControl>
+                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                              <SelectValue placeholder="Select material type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-slate-700 border-slate-600">
+                            {BLOUSE_MATERIAL_TYPES.map((type) => (
+                              <SelectItem
+                                key={type}
+                                value={type}
+                                className="text-white"
+                              >
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="lengthInches"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">
+                            Length (inches)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              className="bg-slate-700 border-slate-600 text-white"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="widthInches"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">
+                            Width (inches)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              className="bg-slate-700 border-slate-600 text-white"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
+              {form.watch("category") === "Ready Made Blouses" && (
+                <FormField
+                  control={form.control}
+                  name="readyBlouseTypes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-300">
+                        Ready Blouse Type
+                      </FormLabel>
+                      <Select
+                        onValueChange={(val) => field.onChange([val])}
+                        value={field.value?.[0]}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-slate-700 border-slate-600">
+                          {READY_BLOUSE_TYPES.map((type) => (
+                            <SelectItem
+                              key={type}
+                              value={type}
+                              className="text-white"
+                            >
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
@@ -548,22 +717,29 @@ export default function AdminProducts() {
                     <FormLabel className="text-slate-300">Colors</FormLabel>
                     <div className="space-y-2">
                       <div className="flex gap-2">
-                        <Input 
+                        <Input
                           placeholder="Enter color (e.g., Red, Blue)"
                           value={colorInput}
                           onChange={(e) => setColorInput(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addColor())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            (e.preventDefault(), addColor())
+                          }
                           className="bg-slate-700 border-slate-600 text-white"
                           data-testid="input-add-color"
                         />
-                        <Button type="button" variant="outline" onClick={addColor} className="border-slate-600">
+                        <Button
+                          type="button"
+                          onClick={addColor}
+                          className="bg-white text-slate-900 hover:bg-slate-200"
+                        >
                           Add
                         </Button>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {form.watch("colors").map(color => (
-                          <Badge 
-                            key={color} 
+                        {form.watch("colors").map((color) => (
+                          <Badge
+                            key={color}
                             variant="secondary"
                             className="bg-slate-700 text-slate-300 pr-1"
                           >
@@ -586,6 +762,36 @@ export default function AdminProducts() {
                 )}
               />
 
+              <div>
+                <label className="text-slate-300 text-sm font-medium">
+                  Stock per Color
+                </label>
+
+                <div className="mt-2 space-y-2">
+                  {form.watch("colors").map((color) => (
+                    <div key={color} className="flex items-center gap-3">
+                      <span className="w-20 text-slate-300">{color}</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={stockByColor[color] ?? ""}
+                        onChange={(e) =>
+                          setStockByColor((prev) => ({
+                            ...prev,
+                            [color]: Number(e.target.value),
+                          }))
+                        }
+                        className="w-32 bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-slate-400 mt-1">
+                  Enter stock quantity for each color
+                </p>
+              </div>
+
               <FormField
                 control={form.control}
                 name="images"
@@ -594,23 +800,30 @@ export default function AdminProducts() {
                     <FormLabel className="text-slate-300">Image URLs</FormLabel>
                     <div className="space-y-2">
                       <div className="flex gap-2">
-                        <Input 
+                        <Input
                           placeholder="Enter image URL"
                           value={imageInput}
                           onChange={(e) => setImageInput(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addImage())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            (e.preventDefault(), addImage())
+                          }
                           className="bg-slate-700 border-slate-600 text-white"
                           data-testid="input-add-image"
                         />
-                        <Button type="button" variant="outline" onClick={addImage} className="border-slate-600">
+                        <Button
+                          type="button"
+                          onClick={addImage}
+                          className="bg-white text-slate-900 hover:bg-slate-200 shadow-sm"
+                        >
                           <ImagePlus className="w-4 h-4" />
                         </Button>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {form.watch("images").map((image, idx) => (
                           <div key={idx} className="relative group">
-                            <img 
-                              src={image} 
+                            <img
+                              src={image}
                               alt={`Preview ${idx + 1}`}
                               className="w-16 h-16 object-cover rounded-md"
                             />
@@ -633,10 +846,19 @@ export default function AdminProducts() {
               />
 
               <DialogFooter className="gap-2">
-                <Button type="button" variant="outline" onClick={closeDialog} className="border-slate-600">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeDialog}
+                  className="bg-white text-slate-900 hover:bg-slate-200 shadow-sm"
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isPending} data-testid="button-save-product">
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  data-testid="button-save-product"
+                >
                   {isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -654,12 +876,18 @@ export default function AdminProducts() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingProduct} onOpenChange={(open) => !open && setDeletingProduct(null)}>
+      <AlertDialog
+        open={!!deletingProduct}
+        onOpenChange={(open) => !open && setDeletingProduct(null)}
+      >
         <AlertDialogContent className="bg-slate-800 border-slate-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Product</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">
+              Delete Product
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400">
-              Are you sure you want to delete "{deletingProduct?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{deletingProduct?.name}"? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -667,7 +895,9 @@ export default function AdminProducts() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingProduct && deleteMutation.mutate(deletingProduct.id)}
+              onClick={() =>
+                deletingProduct && deleteMutation.mutate(deletingProduct.id)
+              }
               className="bg-red-600 hover:bg-red-700"
               data-testid="button-confirm-delete"
             >

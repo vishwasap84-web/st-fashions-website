@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Product } from "@shared/schema";
 import { addToCart } from "@/lib/cart";
 import { useToast } from "@/hooks/use-toast";
+import { CATEGORY_CONFIG } from "@shared/constants/categoryConfig";
 
 interface ProductCardProps {
   product: Product;
@@ -14,11 +15,18 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { toast } = useToast();
 
+  const totalStock = Object.values(product.stockByColor || {}).reduce(
+    (sum, qty) => sum + qty,
+    0,
+  );
+
+  const config = CATEGORY_CONFIG[product.category] ?? {};
+
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (product.stock <= 0) {
+
+    if (totalStock <= 0) {
       toast({
         title: "Out of Stock",
         description: "This product is currently unavailable",
@@ -27,15 +35,20 @@ export function ProductCard({ product }: ProductCardProps) {
       return;
     }
 
-    addToCart({
+    const payload = {
       productId: product.id,
       name: product.name,
       price: product.price,
       quantity: 1,
-      size: product.sizes[0] || "Free Size",
       color: product.colors[0] || "Default",
       image: product.images[0] || "",
-    });
+    } as Parameters<typeof addToCart>[0];
+
+    if (config.showSizes && product.sizes?.length) {
+      payload.size = product.sizes[0];
+    }
+
+    addToCart(payload);
 
     window.dispatchEvent(new Event("cartUpdated"));
 
@@ -55,7 +68,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.id}`}>
-      <Card 
+      <Card
         className="group cursor-pointer overflow-visible hover-elevate"
         data-testid={`card-product-${product.id}`}
       >
@@ -72,16 +85,18 @@ export function ProductCard({ product }: ProductCardProps) {
               No Image
             </div>
           )}
-          
-          {product.stock <= 0 && (
+
+          {totalStock <= 0 && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-              <Badge variant="secondary" className="text-sm">Out of Stock</Badge>
+              <Badge variant="secondary" className="text-sm">
+                Out of Stock
+              </Badge>
             </div>
           )}
 
-          {product.stock > 0 && product.stock <= 5 && (
+          {totalStock > 0 && totalStock <= 5 && (
             <Badge className="absolute top-2 left-2 bg-gold text-gold-foreground">
-              Only {product.stock} left
+              Only {totalStock} left
             </Badge>
           )}
 
@@ -89,7 +104,7 @@ export function ProductCard({ product }: ProductCardProps) {
             size="icon"
             className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
             onClick={handleQuickAdd}
-            disabled={product.stock <= 0}
+            disabled={totalStock <= 0}
             data-testid={`button-quick-add-${product.id}`}
           >
             <ShoppingCart className="w-4 h-4" />
@@ -97,20 +112,50 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <CardContent className="p-4">
-          <p className="text-xs text-muted-foreground mb-1">{product.category}</p>
-          <h3 
+          <p className="text-xs text-muted-foreground mb-1">
+            {product.category}
+          </p>
+          <h3
             className="font-medium text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors"
             data-testid={`text-product-name-${product.id}`}
           >
             {product.name}
           </h3>
-          <p 
+          <p
             className="text-lg font-semibold text-gold"
             data-testid={`text-product-price-${product.id}`}
           >
             {formatPrice(product.price)}
           </p>
-          
+
+          {config.showSareeType && product.sareeType && (
+            <p className="text-xs text-muted-foreground">
+              Type: {product.sareeType}
+            </p>
+          )}
+
+          {config.showReadyBlouseType &&
+            Array.isArray(product.readyBlouseTypes) &&
+            product.readyBlouseTypes.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Type: {product.readyBlouseTypes[0]}
+              </p>
+          )}
+
+          {config.showBlouseMaterialType && product.blouseMaterialType && (
+            <p className="text-xs text-muted-foreground">
+              Material: {product.blouseMaterialType}
+            </p>
+          )}
+
+          {config.showLengthWidth &&
+            product.lengthInches &&
+            product.widthInches && (
+              <p className="text-xs text-muted-foreground">
+                {product.lengthInches}" × {product.widthInches}"
+              </p>
+            )}
+
           {product.colors.length > 0 && (
             <div className="flex items-center gap-1 mt-2">
               {product.colors.slice(0, 4).map((color, index) => (
@@ -122,7 +167,9 @@ export function ProductCard({ product }: ProductCardProps) {
                 />
               ))}
               {product.colors.length > 4 && (
-                <span className="text-xs text-muted-foreground">+{product.colors.length - 4}</span>
+                <span className="text-xs text-muted-foreground">
+                  +{product.colors.length - 4}
+                </span>
               )}
             </div>
           )}

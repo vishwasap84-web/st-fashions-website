@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest } from "@/lib/queryClient";
-import { setCustomerSession } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -51,11 +50,6 @@ export default function SignupPage() {
       return response.json();
     },
     onSuccess: (customer) => {
-      setCustomerSession({
-        id: customer.id,
-        name: customer.name,
-        phone: customer.phone,
-      });
       toast({
         title: "Account Created!",
         description: "Welcome to ST Fashions",

@@ -5,11 +5,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Phone, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { apiRequest } from "@/lib/queryClient";
-import { setCustomerSession } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { loginCustomerSchema, type Customer } from "@shared/schema";
 import { z } from "zod";
@@ -34,23 +47,24 @@ export default function LoginPage() {
     },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: LoginFormData) => {
-      const response = await apiRequest("POST", "/api/customers/login", data);
-      return response.json();
-    },
-    onSuccess: (customer: Customer) => {
-      setCustomerSession({
-        id: customer.id,
-        name: customer.name,
-        phone: customer.phone,
-      });
-      toast({
-        title: "Welcome back!",
-        description: `Logged in as ${customer.name}`,
-      });
-      setLocation("/");
-    },
+    const loginMutation = useMutation({
+      mutationFn: async (data: LoginFormData) => {
+        const res = await fetch("/api/customers/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // 🔐 IMPORTANT
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || "Login failed");
+        }
+
+        return res.json();
+      },
     onError: (error: Error) => {
       toast({
         title: "Login Failed",
@@ -70,9 +84,13 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/">
             <div className="inline-flex items-center gap-2 cursor-pointer">
-              <span className="font-serif text-4xl font-bold text-primary">ST</span>
+              <span className="font-serif text-4xl font-bold text-primary">
+                ST
+              </span>
               <div className="flex flex-col leading-tight text-left">
-                <span className="text-sm font-medium text-foreground">Sannidhi & Tanisha</span>
+                <span className="text-sm font-medium text-foreground">
+                  Sannidhi & Tanisha
+                </span>
                 <span className="text-xs text-muted-foreground">Fashions</span>
               </div>
             </div>
@@ -88,7 +106,10 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="phone"
@@ -98,7 +119,7 @@ export default function LoginPage() {
                       <FormControl>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input 
+                          <Input
                             placeholder="Enter 10-digit phone number"
                             className="pl-10"
                             maxLength={10}
@@ -125,7 +146,7 @@ export default function LoginPage() {
                       <FormControl>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input 
+                          <Input
                             type={showPassword ? "text" : "password"}
                             placeholder="Enter your password"
                             className="pl-10 pr-10"
@@ -152,8 +173,8 @@ export default function LoginPage() {
                   )}
                 />
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full"
                   disabled={loginMutation.isPending}
                   data-testid="button-login"
@@ -174,7 +195,10 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground text-center">
               Don't have an account?{" "}
               <Link href="/signup">
-                <span className="text-primary hover:underline cursor-pointer" data-testid="link-signup">
+                <span
+                  className="text-primary hover:underline cursor-pointer"
+                  data-testid="link-signup"
+                >
                   Sign up
                 </span>
               </Link>

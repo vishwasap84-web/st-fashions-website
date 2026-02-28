@@ -3,37 +3,63 @@ import { z } from "zod";
 // Categories for ST Fashions
 export const CATEGORIES = [
   "Sarees",
-  "Aari Work Blouses",
+  "Blouse Materials",
   "Ready Made Blouses",
-  "Ladies Fancy Items",
-  "Stationery"
+  "Novelties",
+  "Stationery",
 ] as const;
 
-export type Category = typeof CATEGORIES[number];
+export type Category = (typeof CATEGORIES)[number];
 
 // Size options
 export const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"] as const;
-export type Size = typeof SIZES[number];
+export type Size = (typeof SIZES)[number];
 
 // Order status options
-export const ORDER_STATUSES = ["Pending", "Confirmed", "Packed", "Shipped", "Delivered"] as const;
-export type OrderStatus = typeof ORDER_STATUSES[number];
+export const ORDER_STATUSES = [
+  "Pending",
+  "Confirmed",
+  "Packed",
+  "Shipped",
+  "Delivered",
+] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 // Product Schema
 export const productSchema = z.object({
   id: z.string(),
-  name: z.string().min(1, "Product name is required"),
+  name: z.string().min(1),
   category: z.enum(CATEGORIES),
   description: z.string(),
-  price: z.number().positive("Price must be positive"),
-  sizes: z.array(z.enum(SIZES)),
+  price: z.number(),
+
+  // OPTIONAL — used only where needed
+  sizes: z.array(z.enum(SIZES)).optional(),
+
   colors: z.array(z.string()),
   images: z.array(z.string()),
-  stock: z.number().int().min(0, "Stock cannot be negative"),
+
+  // Stock per color
+  stockByColor: z.record(z.number()).optional(),
+
+  // Sarees
+  sareeType: z.string().optional(),
+
+  // Blouse Materials
+  blouseMaterialType: z.string().optional(),
+  lengthInches: z.number().optional(),
+  widthInches: z.number().optional(),
+
+  // Ready Made Blouses
+  readyBlouseTypes: z.array(z.string()).optional(),
+
   createdAt: z.string().optional(),
 });
 
-export const insertProductSchema = productSchema.omit({ id: true, createdAt: true });
+export const insertProductSchema = productSchema.omit({
+  id: true,
+  createdAt: true,
+});
 
 export type Product = z.infer<typeof productSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
@@ -47,7 +73,10 @@ export const customerSchema = z.object({
   createdAt: z.string().optional(),
 });
 
-export const insertCustomerSchema = customerSchema.omit({ id: true, createdAt: true });
+export const insertCustomerSchema = customerSchema.omit({
+  id: true,
+  createdAt: true,
+});
 export const loginCustomerSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits"),
   password: z.string().min(1, "Password is required"),
@@ -85,7 +114,11 @@ export const orderSchema = z.object({
   createdAt: z.string(),
 });
 
-export const insertOrderSchema = orderSchema.omit({ id: true, status: true, createdAt: true });
+export const insertOrderSchema = orderSchema.omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});
 
 export type Order = z.infer<typeof orderSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
@@ -102,14 +135,18 @@ export const loginAdminSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(8, "New password must be at least 8 characters"),
-  confirmPassword: z.string().min(1, "Please confirm your password"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 export type Admin = z.infer<typeof adminSchema>;
 
@@ -117,10 +154,18 @@ export type Admin = z.infer<typeof adminSchema>;
 export const checkoutFormSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
   phone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits"),
-  dob: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Date must be in DD/MM/YYYY format").optional().or(z.literal("")),
+  dob: z
+    .string()
+    .regex(/^\d{2}\/\d{2}\/\d{4}$/, "Date must be in DD/MM/YYYY format")
+    .optional()
+    .or(z.literal("")),
   address: z.string().min(10, "Please enter complete address"),
   pinCode: z.string().regex(/^\d{6}$/, "PIN code must be 6 digits"),
-  alternativePhone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits").optional().or(z.literal("")),
+  alternativePhone: z
+    .string()
+    .regex(/^\d{10}$/, "Phone must be 10 digits")
+    .optional()
+    .or(z.literal("")),
 });
 
 export type CheckoutFormData = z.infer<typeof checkoutFormSchema>;

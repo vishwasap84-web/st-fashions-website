@@ -9,24 +9,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { getCart, getCartTotal, clearCart } from "@/lib/cart";
-import { getCustomerSession } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { checkoutFormSchema, type CheckoutFormData, type CartItem } from "@shared/schema";
+import {
+  checkoutFormSchema,
+  type CheckoutFormData,
+  type CartItem,
+} from "@shared/schema";
 
 export default function CheckoutPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const customer = getCustomerSession();
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
-      fullName: customer?.name || "",
-      phone: customer?.phone || "",
+      fullName: "",
+      phone: "",
       dob: "",
       address: "",
       pinCode: "",
@@ -46,7 +55,6 @@ export default function CheckoutPage() {
   const orderMutation = useMutation({
     mutationFn: async (data: CheckoutFormData) => {
       const orderData = {
-        customerId: customer?.id,
         customerName: data.fullName,
         customerPhone: data.phone,
         customerDob: data.dob || undefined,
@@ -67,7 +75,8 @@ export default function CheckoutPage() {
     onError: (error: Error) => {
       toast({
         title: "Order Failed",
-        description: error.message || "Failed to place order. Please try again.",
+        description:
+          error.message || "Failed to place order. Please try again.",
         variant: "destructive",
       });
     },
@@ -100,8 +109,32 @@ export default function CheckoutPage() {
     return formatted;
   };
 
+  const pinCode = form.watch("pinCode");
+
+  const calculateShipping = (pin: string, subtotal: number) => {
+    // No PIN or incomplete PIN → don't calculate yet
+    if (!pin || pin.length !== 6) return 0;
+
+    // RULE 1: Free shipping for orders ₹4999 or above
+    if (subtotal >= 4999) {
+      return 0;
+    }
+
+    const pinNumber = Number(pin);
+
+    // RULE 2: Free local delivery (Belagavi PIN range)
+    const isLocal = pinNumber >= 590001 && pinNumber <= 590020;
+
+    if (isLocal) {
+      return 0;
+    }
+
+    // RULE 3: Default shipping
+    return 99;
+  };
+
   const subtotal = getCartTotal(cartItems);
-  const shipping = subtotal >= 999 ? 0 : 99;
+  const shipping = calculateShipping(pinCode, subtotal);
   const total = subtotal + shipping;
 
   if (cartItems.length === 0) {
@@ -122,7 +155,10 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   <FormField
                     control={form.control}
                     name="fullName"
@@ -130,9 +166,9 @@ export default function CheckoutPage() {
                       <FormItem>
                         <FormLabel>Full Name *</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter your full name" 
-                            {...field} 
+                          <Input
+                            placeholder="Enter your full name"
+                            {...field}
                             data-testid="input-full-name"
                           />
                         </FormControl>
@@ -150,14 +186,19 @@ export default function CheckoutPage() {
                           <FormLabel>Phone Number *</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">+91</span>
-                              <Input 
-                                placeholder="10-digit mobile number" 
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                +91
+                              </span>
+                              <Input
+                                placeholder="10-digit mobile number"
                                 className="pl-12"
                                 maxLength={10}
                                 {...field}
                                 onChange={(e) => {
-                                  const value = e.target.value.replace(/\D/g, "");
+                                  const value = e.target.value.replace(
+                                    /\D/g,
+                                    "",
+                                  );
                                   field.onChange(value);
                                 }}
                                 data-testid="input-phone"
@@ -180,14 +221,19 @@ export default function CheckoutPage() {
                           <FormLabel>Alternative Phone (Optional)</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">+91</span>
-                              <Input 
-                                placeholder="10-digit mobile number" 
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                +91
+                              </span>
+                              <Input
+                                placeholder="10-digit mobile number"
                                 className="pl-12"
                                 maxLength={10}
                                 {...field}
                                 onChange={(e) => {
-                                  const value = e.target.value.replace(/\D/g, "");
+                                  const value = e.target.value.replace(
+                                    /\D/g,
+                                    "",
+                                  );
                                   field.onChange(value);
                                 }}
                                 data-testid="input-alt-phone"
@@ -207,8 +253,8 @@ export default function CheckoutPage() {
                       <FormItem>
                         <FormLabel>Date of Birth (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="DD/MM/YYYY" 
+                          <Input
+                            placeholder="DD/MM/YYYY"
                             maxLength={10}
                             {...field}
                             onChange={(e) => {
@@ -230,7 +276,7 @@ export default function CheckoutPage() {
                       <FormItem>
                         <FormLabel>Full Address *</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Enter your complete address including house/flat no., street, landmark, city, state"
                             className="min-h-[100px] resize-none"
                             {...field}
@@ -250,8 +296,8 @@ export default function CheckoutPage() {
                         <FormLabel>PIN Code *</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input 
-                              placeholder="6-digit PIN code" 
+                            <Input
+                              placeholder="6-digit PIN code"
                               maxLength={6}
                               className="w-40"
                               {...field}
@@ -271,9 +317,9 @@ export default function CheckoutPage() {
                     )}
                   />
 
-                  <Button 
-                    type="submit" 
-                    size="lg" 
+                  <Button
+                    type="submit"
+                    size="lg"
                     className="w-full"
                     disabled={orderMutation.isPending}
                     data-testid="button-place-order"
@@ -300,8 +346,11 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {cartItems.map((item, index) => (
-                  <div key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-3">
+                {cartItems.map((item) => (
+                  <div
+                    key={`${item.productId}-${item.size}-${item.color}`}
+                    className="flex gap-3"
+                  >
                     <div className="w-16 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
                       {item.image ? (
                         <img
@@ -316,7 +365,9 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {item.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {item.size} | {item.color} | Qty: {item.quantity}
                       </p>
@@ -327,6 +378,12 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
+
+              {subtotal >= 4999 && (
+                <p className="text-xs text-green-600 text-center">
+                  🎉 Free shipping on orders above ₹4999
+                </p>
+              )}
 
               <Separator />
 
@@ -347,11 +404,21 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {pinCode &&
+                Number(pinCode) >= 590001 &&
+                Number(pinCode) <= 590020 && (
+                  <p className="text-xs text-green-600 text-center">
+                    🎉 Free local delivery (Belagavi area)
+                  </p>
+                )}
+
               <Separator />
 
               <div className="flex justify-between text-lg font-semibold">
                 <span>Total</span>
-                <span className="text-gold" data-testid="text-checkout-total">{formatPrice(total)}</span>
+                <span className="text-gold" data-testid="text-checkout-total">
+                  {formatPrice(total)}
+                </span>
               </div>
 
               <div className="bg-muted rounded-md p-3">

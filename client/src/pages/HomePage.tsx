@@ -1,19 +1,32 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Sparkles, Truck, CreditCard, Headphones } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  Truck,
+  CreditCard,
+  Headphones,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/ProductCard";
 import type { Product } from "@shared/schema";
 import { CATEGORIES } from "@shared/schema";
+import heroLogo from "@/Assets/ST_LOGOO_ROUND.png";
+import stLogo from "@/Assets/ST_LOGO.png";
 
 const categoryImages: Record<string, string> = {
-  "Sarees": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80",
-  "Aari Work Blouses": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80",
-  "Ready Made Blouses": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&q=80",
-  "Ladies Fancy Items": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&q=80",
-  "Stationery": "https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800&q=80",
+  Sarees:
+    "https://res.cloudinary.com/dawotk9q3/image/upload/v1766089821/Timeless_traditions_and_modern_elegance_wqjyrr.png",
+  "Blouse Materials":
+    "https://res.cloudinary.com/dawotk9q3/image/upload/v1766090139/Aari_work_blouse_pieces2_nutume.png",
+  "Ready Made Blouses":
+    "https://res.cloudinary.com/dawotk9q3/image/upload/v1766090593/Ready_blouse_wl8ylk.png",
+  "Novelties":
+    "https://res.cloudinary.com/dawotk9q3/image/upload/v1766090690/Ladies_fancy_fiomf3.png",
+  Stationery:
+    "https://res.cloudinary.com/dawotk9q3/image/upload/v1766091038/stat_bwexdw.png",
 };
 
 export default function HomePage() {
@@ -28,33 +41,42 @@ export default function HomePage() {
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-background to-purple/10">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1920&q=80')] bg-cover bg-center opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center py-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
             <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">New Collection Available</span>
+            <span className="text-sm font-medium">New Collection Arrived</span>
           </div>
+          <img
+            src={stLogo}
+            alt="ST Fashions Logo"
+            className="h-50 md:h-66 mx-auto mb-6"
+          />
           
-          <h1 className="font-serif text-5xl md:text-7xl font-bold text-foreground mb-4">
-            <span className="text-primary">ST</span> Fashions
-          </h1>
-          <p className="font-serif text-xl md:text-2xl text-muted-foreground mb-2">
-            Sannidhi & Tanisha Fashions
-          </p>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Discover the finest collection of traditional and contemporary Indian fashion. 
-            From elegant Sarees to beautifully crafted Aari Work Blouses.
+            Discover the finest collection of traditional and contemporary
+            Indian fashion. From elegant Sarees to beautifully crafted Blouse
+            Fabrics.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/products">
-              <Button size="lg" className="text-lg px-8" data-testid="button-shop-collection">
-                Shop Collection
+              <Button
+                size="lg"
+                className="text-lg px-8"
+                data-testid="button-shop-collection"
+              >
+                Collections
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
             <Link href="/products?category=Sarees">
-              <Button size="lg" variant="outline" className="text-lg px-8" data-testid="button-view-sarees">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8"
+                data-testid="button-view-sarees"
+              >
                 View Sarees
               </Button>
             </Link>
@@ -69,16 +91,20 @@ export default function HomePage() {
               Shop by Category
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Explore our wide range of categories, from traditional Sarees to modern accessories
+              Explore our wide range of categories, from traditional Sarees to
+              modern accessories
             </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
             {CATEGORIES.map((category) => (
-              <Link key={category} href={`/products?category=${encodeURIComponent(category)}`}>
-                <Card 
+              <Link
+                key={category}
+                href={`/products?category=${encodeURIComponent(category)}`}
+              >
+                <Card
                   className="group cursor-pointer overflow-visible hover-elevate"
-                  data-testid={`card-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                  data-testid={`card-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                 >
                   <div className="relative aspect-square overflow-hidden rounded-t-xl">
                     <img
@@ -161,30 +187,40 @@ export default function HomePage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Free Shipping</h3>
-                <p className="text-sm text-muted-foreground">On orders above ₹999</p>
+                <p className="text-sm text-muted-foreground">
+                  On orders above ₹4999
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4 p-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <CreditCard className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Secure Payment</h3>
-                <p className="text-sm text-muted-foreground">100% secure checkout</p>
+                <h3 className="font-semibold text-foreground">
+                  Secure Payment
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  100% secure checkout
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4 p-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Quality Products</h3>
-                <p className="text-sm text-muted-foreground">Premium quality guaranteed</p>
+                <h3 className="font-semibold text-foreground">
+                  Quality Products
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Premium quality guaranteed
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4 p-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Headphones className="w-6 h-6 text-primary" />
@@ -204,18 +240,24 @@ export default function HomePage() {
             Visit Our Store
           </h2>
           <p className="text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-            Experience our collection in person at our store in Belgaum. 
-            Our friendly staff is ready to help you find the perfect outfit.
+            Experience our collection in person at our store in Belgaum. Our
+            friendly staff is ready to help you find the perfect outfit.
           </p>
           <div className="bg-primary-foreground/10 rounded-xl p-6 max-w-md mx-auto backdrop-blur-sm">
             <address className="not-italic text-lg leading-relaxed">
-              KMF Nandhini Dairy,<br />
-              Behind DCC Bank, Sector No 8,<br />
-              CTS 6481, Anjaneya Nagar,<br />
+              KMF Nandhini Dairy,
+              <br />
+              Behind DCC Bank, Sector No 8,
+              <br />
+              CTS 6481, Anjaneya Nagar,
+              <br />
               Belgaum 590016
             </address>
             <div className="mt-4 pt-4 border-t border-primary-foreground/20">
-              <a href="tel:9742654155" className="text-lg font-semibold hover:underline">
+              <a
+                href="tel:9742654155"
+                className="text-lg font-semibold hover:underline"
+              >
                 Call: 9742654155
               </a>
             </div>

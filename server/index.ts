@@ -2,6 +2,9 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 
 const app = express();
 const httpServer = createServer(app);
@@ -59,6 +62,33 @@ app.use((req, res, next) => {
   next();
 });
 
+const PgStore = connectPgSimple(session);
+
+const pgPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
+});
+
+app.use(
+  session({
+    store: new PgStore({
+      pool: pgPool,
+      tableName: "session",
+    }),
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60, // 1 hour
+    },
+  })
+);
+
 (async () => {
   await registerRoutes(httpServer, app);
 
@@ -96,4 +126,3 @@ app.use((req, res, next) => {
     },
   );
 })();
-

@@ -6,25 +6,42 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { ProductCard } from "@/components/ProductCard";
 import type { Product } from "@shared/schema";
 import { CATEGORIES, SIZES } from "@shared/schema";
+import { CATEGORY_CONFIG } from "@shared/constants/categoryConfig";
 
 type SortOption = "newest" | "price-low" | "price-high" | "name";
 
 export default function ProductsPage() {
   const searchParams = useSearch();
   const [, setLocation] = useLocation();
-  
+
   const urlParams = new URLSearchParams(searchParams);
   const initialCategory = urlParams.get("category") || "";
   const initialSearch = urlParams.get("search") || "";
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    initialCategory ? [initialCategory] : []
+    initialCategory ? [initialCategory] : [],
   );
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -38,32 +55,42 @@ export default function ProductsPage() {
     const params = new URLSearchParams(searchParams);
     const category = params.get("category") || "";
     const search = params.get("search") || "";
-    
+
     if (category && !selectedCategories.includes(category)) {
       setSelectedCategories([category]);
+      setSelectedSizes([]); // ✅ clear sizes when category changes
     }
     if (search !== searchQuery) {
       setSearchQuery(search);
     }
   }, [searchParams]);
 
-  const filteredProducts = products?.filter((product) => {
-    if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
-      return false;
-    }
-    if (selectedSizes.length > 0 && !product.sizes.some(s => selectedSizes.includes(s))) {
-      return false;
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        product.name.toLowerCase().includes(query) ||
-        product.description.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  }) || [];
+  const filteredProducts =
+    products?.filter((product) => {
+      if (
+        selectedCategories.length > 0 &&
+        !selectedCategories.includes(product.category)
+      ) {
+        return false;
+      }
+      if (
+        selectedSizes.length > 0 &&
+        (!product.sizes ||
+          !product.sizes.some((s) => selectedSizes.includes(s)))
+      ) {
+        return false;
+      }
+
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          product.name.toLowerCase().includes(query) ||
+          product.description.toLowerCase().includes(query) ||
+          product.category.toLowerCase().includes(query)
+        );
+      }
+      return true;
+    }) || [];
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
@@ -79,18 +106,16 @@ export default function ProductsPage() {
   });
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories(prev =>
+    setSelectedCategories((prev) =>
       prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
     );
   };
 
   const toggleSize = (size: string) => {
-    setSelectedSizes(prev =>
-      prev.includes(size)
-        ? prev.filter(s => s !== size)
-        : [...prev, size]
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
     );
   };
 
@@ -101,7 +126,8 @@ export default function ProductsPage() {
     setLocation("/products");
   };
 
-  const hasFilters = selectedCategories.length > 0 || selectedSizes.length > 0 || searchQuery;
+  const hasFilters =
+    selectedCategories.length > 0 || selectedSizes.length > 0 || searchQuery;
 
   const FilterSection = () => (
     <div className="space-y-6">
@@ -119,7 +145,7 @@ export default function ProductsPage() {
               <Checkbox
                 checked={selectedCategories.includes(category)}
                 onCheckedChange={() => toggleCategory(category)}
-                data-testid={`checkbox-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                data-testid={`checkbox-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
               />
               <span className="text-sm text-foreground">{category}</span>
             </label>
@@ -127,27 +153,28 @@ export default function ProductsPage() {
         </CollapsibleContent>
       </Collapsible>
 
-      <Collapsible defaultOpen>
-        <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
-          <h3 className="font-semibold text-foreground">Sizes</h3>
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2">
-          <div className="flex flex-wrap gap-2">
-            {SIZES.map((size) => (
-              <Button
-                key={size}
-                variant={selectedSizes.includes(size) ? "default" : "outline"}
-                size="sm"
-                onClick={() => toggleSize(size)}
-                data-testid={`button-size-${size.toLowerCase()}`}
-              >
-                {size}
-              </Button>
-            ))}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      {selectedCategories.some((cat) => CATEGORY_CONFIG[cat]?.showSizes) && (
+        <Collapsible defaultOpen>
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+            <h3 className="font-semibold text-foreground">Sizes</h3>
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
+            <div className="flex flex-wrap gap-2">
+              {SIZES.map((size) => (
+                <Button
+                  key={size}
+                  variant={selectedSizes.includes(size) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleSize(size)}
+                >
+                  {size}
+                </Button>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {hasFilters && (
         <Button
@@ -168,11 +195,14 @@ export default function ProductsPage() {
       <div className="bg-card border-b border-border py-8">
         <div className="container mx-auto px-4">
           <h1 className="font-serif text-3xl md:text-4xl font-semibold text-foreground mb-2">
-            {selectedCategories.length === 1 ? selectedCategories[0] : "All Products"}
+            {selectedCategories.length === 1
+              ? selectedCategories[0]
+              : "All Products"}
           </h1>
           <p className="text-muted-foreground">
             {searchQuery && `Search results for "${searchQuery}" - `}
-            {sortedProducts.length} {sortedProducts.length === 1 ? "product" : "products"} found
+            {sortedProducts.length}{" "}
+            {sortedProducts.length === 1 ? "product" : "products"} found
           </p>
         </div>
       </div>
@@ -183,7 +213,9 @@ export default function ProductsPage() {
             <div className="sticky top-24">
               <div className="flex items-center gap-2 mb-6">
                 <Filter className="w-5 h-5 text-foreground" />
-                <h2 className="font-semibold text-lg text-foreground">Filters</h2>
+                <h2 className="font-semibold text-lg text-foreground">
+                  Filters
+                </h2>
               </div>
               <FilterSection />
             </div>
@@ -216,7 +248,10 @@ export default function ProductsPage() {
                 </SheetContent>
               </Sheet>
 
-              <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+              <Select
+                value={sortBy}
+                onValueChange={(value: SortOption) => setSortBy(value)}
+              >
                 <SelectTrigger className="w-48" data-testid="select-sort">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -253,12 +288,18 @@ export default function ProductsPage() {
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                   <Filter className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  No products found
+                </h3>
                 <p className="text-muted-foreground mb-4">
                   Try adjusting your filters or search terms
                 </p>
                 {hasFilters && (
-                  <Button variant="outline" onClick={clearFilters} data-testid="button-clear-filters-empty">
+                  <Button
+                    variant="outline"
+                    onClick={clearFilters}
+                    data-testid="button-clear-filters-empty"
+                  >
                     Clear All Filters
                   </Button>
                 )}

@@ -2,10 +2,23 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { getCart, updateCartQuantity, removeFromCart, getCartTotal } from "@/lib/cart";
+import {
+  getCart,
+  updateCartQuantity,
+  removeFromCart,
+  getCartTotal,
+} from "@/lib/cart";
 import type { CartItem } from "@shared/schema";
+
+const FREE_SHIPPING_THRESHOLD = 4999;
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -15,7 +28,12 @@ export default function CartPage() {
   }, []);
 
   const handleUpdateQuantity = (item: CartItem, newQuantity: number) => {
-    const updated = updateCartQuantity(item.productId, item.size, item.color, newQuantity);
+    const updated = updateCartQuantity(
+      item.productId,
+      item.size,
+      item.color,
+      newQuantity,
+    );
     setCartItems(updated);
     window.dispatchEvent(new Event("cartUpdated"));
   };
@@ -35,7 +53,7 @@ export default function CartPage() {
   };
 
   const subtotal = getCartTotal(cartItems);
-  const shipping = subtotal >= 999 ? 0 : 99;
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 99;
   const total = subtotal + shipping;
 
   if (cartItems.length === 0) {
@@ -49,7 +67,8 @@ export default function CartPage() {
             Your Cart is Empty
           </h1>
           <p className="text-muted-foreground mb-8">
-            Looks like you haven't added anything to your cart yet. Start shopping to fill it up!
+            Looks like you haven't added anything to your cart yet. Start
+            shopping to fill it up!
           </p>
           <Link href="/products">
             <Button size="lg" data-testid="button-start-shopping">
@@ -71,7 +90,10 @@ export default function CartPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {cartItems.map((item, index) => (
-            <Card key={`${item.productId}-${item.size}-${item.color}`} data-testid={`card-cart-item-${index}`}>
+            <Card
+              key={`${item.productId}-${item.size}-${item.color}`}
+              data-testid={`card-cart-item-${index}`}
+            >
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <div className="w-24 h-32 rounded-md overflow-hidden bg-muted flex-shrink-0">
@@ -90,11 +112,14 @@ export default function CartPage() {
 
                   <div className="flex-1 min-w-0">
                     <Link href={`/product/${item.productId}`}>
-                      <h3 className="font-medium text-foreground hover:text-primary truncate cursor-pointer" data-testid={`text-cart-item-name-${index}`}>
+                      <h3
+                        className="font-medium text-foreground hover:text-primary truncate cursor-pointer"
+                        data-testid={`text-cart-item-name-${index}`}
+                      >
                         {item.name}
                       </h3>
                     </Link>
-                    
+
                     <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
                       {item.size && <span>Size: {item.size}</span>}
                       {item.size && item.color && <span>|</span>}
@@ -103,14 +128,19 @@ export default function CartPage() {
                           Color:
                           <span
                             className="w-4 h-4 rounded-full border border-border inline-block"
-                            style={{ backgroundColor: item.color.toLowerCase() }}
+                            style={{
+                              backgroundColor: item.color.toLowerCase(),
+                            }}
                           />
                           {item.color}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-lg font-semibold text-gold mt-2" data-testid={`text-cart-item-price-${index}`}>
+                    <p
+                      className="text-lg font-semibold text-gold mt-2"
+                      data-testid={`text-cart-item-price-${index}`}
+                    >
                       {formatPrice(item.price)}
                     </p>
                   </div>
@@ -131,19 +161,26 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                        onClick={() =>
+                          handleUpdateQuantity(item, item.quantity - 1)
+                        }
                         data-testid={`button-decrease-quantity-${index}`}
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="w-8 text-center text-sm font-medium" data-testid={`text-quantity-${index}`}>
+                      <span
+                        className="w-8 text-center text-sm font-medium"
+                        data-testid={`text-quantity-${index}`}
+                      >
                         {item.quantity}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                        onClick={() =>
+                          handleUpdateQuantity(item, item.quantity + 1)
+                        }
                         data-testid={`button-increase-quantity-${index}`}
                       >
                         <Plus className="w-3 h-3" />
@@ -163,8 +200,14 @@ export default function CartPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                <span className="font-medium" data-testid="text-subtotal">{formatPrice(subtotal)}</span>
+                <span className="text-muted-foreground">
+                  Subtotal (
+                  {cartItems.reduce((sum, item) => sum + item.quantity, 0)}{" "}
+                  items)
+                </span>
+                <span className="font-medium" data-testid="text-subtotal">
+                  {formatPrice(subtotal)}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
@@ -176,26 +219,38 @@ export default function CartPage() {
                   )}
                 </span>
               </div>
-              {subtotal < 999 && (
+              {subtotal < FREE_SHIPPING_THRESHOLD && (
                 <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                  Add {formatPrice(999 - subtotal)} more for FREE shipping!
+                  Add {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for
+                  FREE shipping!
                 </p>
               )}
+
               <Separator />
               <div className="flex justify-between text-lg font-semibold">
                 <span>Total</span>
-                <span className="text-gold" data-testid="text-total">{formatPrice(total)}</span>
+                <span className="text-gold" data-testid="text-total">
+                  {formatPrice(total)}
+                </span>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
               <Link href="/checkout" className="w-full">
-                <Button className="w-full" size="lg" data-testid="button-proceed-checkout">
+                <Button
+                  className="w-full"
+                  size="lg"
+                  data-testid="button-proceed-checkout"
+                >
                   Proceed to Checkout
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
               <Link href="/products" className="w-full">
-                <Button variant="outline" className="w-full" data-testid="button-continue-shopping">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-continue-shopping"
+                >
                   Continue Shopping
                 </Button>
               </Link>

@@ -12,22 +12,6 @@ export interface AdminSession {
   isDefaultPassword: boolean;
 }
 
-export function getCustomerSession(): CustomerSession | null {
-  if (typeof window === "undefined") return null;
-  const session = localStorage.getItem(CUSTOMER_KEY);
-  return session ? JSON.parse(session) : null;
-}
-
-export function setCustomerSession(customer: CustomerSession): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
-}
-
-export function clearCustomerSession(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(CUSTOMER_KEY);
-}
-
 export function getAdminSession(): AdminSession | null {
   if (typeof window === "undefined") return null;
   const session = localStorage.getItem(ADMIN_KEY);

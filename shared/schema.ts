@@ -1,4 +1,57 @@
+import {
+  pgTable,
+  text,
+  integer,
+  jsonb,
+  timestamp,
+  boolean,
+} from "drizzle-orm/pg-core";
 import { z } from "zod";
+
+/* ===============================
+   DATABASE TABLE DEFINITIONS
+================================ */
+
+export const products = pgTable("products", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  price: integer("price").notNull(),
+  images: jsonb("images").notNull(),
+  colors: jsonb("colors").notNull(),
+  sizes: jsonb("sizes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const customers = pgTable("customers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const orders = pgTable("orders", {
+  id: text("id").primaryKey(),
+  customerId: text("customer_id"),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone").notNull(),
+  customerDob: text("customer_dob"),
+  customerAddress: text("customer_address").notNull(),
+  customerPinCode: text("customer_pin_code").notNull(),
+  alternativePhone: text("alternative_phone"),
+  items: jsonb("items").notNull(),
+  totalAmount: integer("total_amount").notNull(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const admins = pgTable("admins", {
+  username: text("username").primaryKey(),
+  password: text("password").notNull(),
+  isDefaultPassword: boolean("is_default_password").notNull(),
+});
 
 // Categories for ST Fashions
 export const CATEGORIES = [

@@ -346,6 +346,7 @@ export async function registerRoutes(
         validated.phone,
         validated.password,
       );
+
       if (!customer) {
         return res
           .status(401)
@@ -358,14 +359,15 @@ export async function registerRoutes(
         phone: customer.phone,
       };
 
-      res.json({ success: true });
-      
+      return res.json({ success: true });
+
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
+
       console.error("Error logging in customer:", error);
-      res.status(500).json({ message: "Failed to login" });
+      return res.status(500).json({ message: "Failed to login" });
     }
   });
 

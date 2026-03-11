@@ -39,11 +39,17 @@ export default function ChangePasswordPage() {
     },
   });
 
-  const changePasswordMutation = useMutation({
-    mutationFn: async (data: ChangePasswordFormData) => {
-      const response = await apiRequest("POST", "/api/admin/change-password", data);
-      return response.json();
-    },
+    const changePasswordMutation = useMutation({
+      mutationFn: async (data: ChangePasswordFormData) => {
+        const response = await apiRequest("POST", "/api/admin/change-password", {
+          username: adminSession?.username,
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+          confirmPassword: data.confirmPassword,
+        });
+
+        return response.json();
+      },
     onSuccess: () => {
       if (adminSession) {
         setAdminSession({

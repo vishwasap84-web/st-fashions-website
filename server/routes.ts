@@ -344,13 +344,13 @@ export async function registerRoutes(
 
       const customer = await storage.verifyCustomerPassword(
         validated.phone,
-        validated.password,
+        validated.password
       );
 
       if (!customer) {
-        return res
-          .status(401)
-          .json({ message: "Invalid phone number or password" });
+        return res.status(401).json({
+          message: "Invalid phone number or password",
+        });
       }
 
       req.session.customer = {
@@ -359,18 +359,24 @@ export async function registerRoutes(
         phone: customer.phone,
       };
 
-      return res.json({ success: true });
+      return res.status(200).json({
+        success: true,
+        customer: {
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+        },
+      });
 
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0].message });
-      }
+      console.error("Customer login error:", error);
 
-      console.error("Error logging in customer:", error);
-      return res.status(500).json({ message: "Failed to login" });
+      return res.status(500).json({
+        message: "Login failed",
+      });
     }
   });
-
+  
   app.get("/api/customers/:id/orders", async (req, res) => {
     try {
       const orders = await storage.getOrdersByCustomer(req.params.id);

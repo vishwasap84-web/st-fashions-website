@@ -359,21 +359,28 @@ export async function registerRoutes(
         phone: customer.phone,
       };
 
-      return res.status(200).json({
-        success: true,
-        customer: {
-          id: customer.id,
-          name: customer.name,
-          phone: customer.phone,
-        },
+      // ensure session saved before response
+      req.session.save(() => {
+        if (!res.headersSent) {
+          res.status(200).json({
+            success: true,
+            customer: {
+              id: customer.id,
+              name: customer.name,
+              phone: customer.phone,
+            },
+          });
+        }
       });
 
     } catch (error) {
       console.error("Customer login error:", error);
 
-      return res.status(500).json({
-        message: "Login failed",
-      });
+      if (!res.headersSent) {
+        return res.status(500).json({
+          message: "Login failed",
+        });
+      }
     }
   });
   

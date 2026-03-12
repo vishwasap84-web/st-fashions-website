@@ -9,6 +9,8 @@ import pg from "pg";
 const app = express();
 const httpServer = createServer(app);
 
+app.set("trust proxy", 1);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -82,11 +84,12 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       httpOnly: true,
-      maxAge: 1000 * 60 * 60, // 1 hour
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60,
     },
-  })
+  }),
 );
 
 (async () => {

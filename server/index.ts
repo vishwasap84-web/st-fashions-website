@@ -80,16 +80,17 @@ app.use(
       pool: pgPool,
       tableName: "session",
     }),
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || "st-fashions-secret",
     resave: false,
     saveUninitialized: false,
+    proxy: true, // ⭐ important for Railway
     cookie: {
       secure: false,
       httpOnly: true,
       sameSite: "lax",
       maxAge: 1000 * 60 * 60,
     },
-  }),
+  })
 );
 
 (async () => {

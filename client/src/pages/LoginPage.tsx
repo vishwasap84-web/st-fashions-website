@@ -22,7 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { loginCustomerSchema, type Customer } from "@shared/schema";
 import { z } from "zod";
@@ -47,24 +47,38 @@ export default function LoginPage() {
     },
   });
 
-    const loginMutation = useMutation({
-      mutationFn: async (data: LoginFormData) => {
-        const res = await fetch("/api/customers/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // 🔐 IMPORTANT
-          body: JSON.stringify(data),
-        });
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginFormData) => {
+      const res = await fetch("/api/customers/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
 
-        if (!res.ok) {
-          const error = await res.json();
-          throw new Error(error.message || "Login failed");
-        }
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Login failed");
+      }
 
-        return res.json();
-      },
+      return res.json();
+    },
+
+    onSuccess: () => {
+      // 🔥 refresh session
+      queryClient.invalidateQueries({ queryKey: ["/api/customers/me"] });
+
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+
+      // redirect to home page
+      setLocation("/");
+    },
+
     onError: (error: Error) => {
       toast({
         title: "Login Failed",

@@ -66,16 +66,15 @@ export default function LoginPage() {
       return res.json();
     },
 
-    onSuccess: () => {
-      // 🔥 refresh session
-      queryClient.invalidateQueries({ queryKey: ["/api/customers/me"] });
+    onSuccess: (data) => {
+      // instantly update logged-in customer
+      queryClient.setQueryData(["/api/customers/me"], data.customer);
 
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
 
-      // redirect to home page
       setLocation("/");
     },
 

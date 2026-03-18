@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -49,12 +49,45 @@ export default function SignupPage() {
       });
       return response.json();
     },
-    onSuccess: (customer) => {
-      toast({
-        title: "Account Created!",
-        description: "Welcome to ST Fashions",
-      });
-      setLocation("/");
+    onSuccess: async (_, variables) => {
+      try {
+        // 🔐 Auto login after signup
+        const loginRes = await fetch("/api/customers/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            phone: variables.phone,
+            password: variables.password,
+          }),
+        });
+
+        const loginData = await loginRes.json();
+
+        // 🔥 Update session instantly (no refresh needed)
+        queryClient.setQueryData(
+          ["/api/customers/me"],
+          loginData.customer
+        );
+
+        toast({
+          title: "Account created successfully 🎉",
+          description: "Welcome to ST Fashions!",
+        });
+
+        setLocation("/");
+      } catch (error) {
+        console.error("Auto login failed:", error);
+
+        toast({
+          title: "Account created",
+          description: "Please login manually",
+        });
+
+        setLocation("/login");
+      }
     },
     onError: (error: Error) => {
       toast({

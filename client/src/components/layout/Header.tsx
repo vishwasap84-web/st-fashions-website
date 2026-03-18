@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 
 import { getCart, getCartCount } from "@/lib/cart";
 
@@ -28,17 +30,18 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
-  const [customer, setCustomer] = useState<any>(null);
+  const { data: customer } = useQuery({
+    queryKey: ["/api/customers/me"],
+    queryFn: async () => {
+      const res = await fetch("/api/customers/me", {
+        credentials: "include",
+      });
 
-  useEffect(() => {
-    fetch("/api/customers/me")
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((data) => setCustomer(data))
-      .catch(() => setCustomer(null));
-  }, []);
+      if (!res.ok) return null;
+
+      return res.json();
+    },
+  });
   
   const handleLogout = async () => {
     await fetch("/api/customers/logout", {
@@ -46,7 +49,9 @@ export function Header() {
       credentials: "include",
     });
 
-    setCustomer(null);
+    // 🔥 update UI instantly
+    queryClient.setQueryData(["/api/customers/me"], null);
+
     setLocation("/");
   };
 

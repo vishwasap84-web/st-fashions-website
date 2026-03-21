@@ -18,13 +18,13 @@ export class Storage {
   /* ================= PRODUCTS ================= */
 
   async getProducts(): Promise<Product[]> {
-    return (await db.select().from(products)) as Product[];
+    const result = await db.select().from(products);
+    return result as unknown as Product[];
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
     const result = await db.select().from(products).where(eq(products.id, id));
-
-    return result[0] as Product;
+    return result[0] as unknown as Product | undefined;
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
@@ -104,7 +104,7 @@ export class Storage {
       .from(customers)
       .where(eq(customers.phone, phone));
 
-    return result[0] as Customer;
+    return result[0] as unknown as Customer | undefined;
   }
 
   /* ================= ORDERS ================= */
@@ -122,12 +122,13 @@ export class Storage {
   }
 
   async getOrders(): Promise<Order[]> {
-    return (await db.select().from(orders)) as Order[];
+    const result = await db.select().from(orders);
+    return result as unknown as Order[];
   }
 
   async getOrder(id: string): Promise<Order | undefined> {
     const result = await db.select().from(orders).where(eq(orders.id, id));
-    return result[0] as Order;
+    return result[0] as unknown as Order | undefined;
   }
 
   async updateOrderStatus(id: string, status: string) {
@@ -136,10 +137,12 @@ export class Storage {
   }
 
   async getOrdersByCustomer(customerId: string): Promise<Order[]> {
-    return (await db
+    const result = await db
       .select()
       .from(orders)
-      .where(eq(orders.customerId, customerId))) as Order[];
+      .where(eq(orders.customerId, customerId));
+
+    return result as unknown as Order[];
   }
 
   async reduceProductStock(productId: string, color: string, qty: number) {
@@ -213,7 +216,7 @@ export class Storage {
       .from(admins)
       .where(eq(admins.username, username));
 
-    return result[0] as Admin;
+    return result[0] as unknown as Admin | undefined;
   }
 }
 

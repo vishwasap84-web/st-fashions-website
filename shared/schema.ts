@@ -21,6 +21,14 @@ export const products = pgTable("products", {
   images: jsonb("images").notNull(),
   colors: jsonb("colors").notNull(),
   sizes: jsonb("sizes"),
+
+  stockByColor: jsonb("stock_by_color"),
+  sareeType: text("saree_type"),
+  blouseMaterialType: text("blouse_material_type"),
+  lengthInches: integer("length_inches"),
+  widthInches: integer("width_inches"),
+  readyBlouseTypes: jsonb("ready_blouse_types"),
+
   createdAt: timestamp("created_at").defaultNow(),
 });
 

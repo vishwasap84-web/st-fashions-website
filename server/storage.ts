@@ -29,21 +29,50 @@ export class Storage {
 
   async createProduct(product: InsertProduct): Promise<Product> {
     const newProduct = {
-      ...product,
       id: randomUUID(),
-      createdAt: new Date().toISOString(),
+      name: product.name,
+      category: product.category,
+      description: product.description,
+      price: product.price,
+      images: product.images ?? [],
+      colors: product.colors ?? [],
+      sizes: product.sizes ?? [],
+      stockByColor: product.stockByColor ?? {},
+      sareeType: product.sareeType ?? null,
+      blouseMaterialType: product.blouseMaterialType ?? null,
+      lengthInches: product.lengthInches ?? null,
+      widthInches: product.widthInches ?? null,
+      readyBlouseTypes: product.readyBlouseTypes ?? [],
     };
 
-    await db.insert(products).values(newProduct as any);
+    await db.insert(products).values(newProduct);
 
-    return newProduct as unknown as Product;
+    const created = await this.getProduct(newProduct.id);
+    return created!;
   }
 
   async updateProduct(id: string, product: Partial<Product>) {
-    await db
-      .update(products)
-      .set(product as any)
-      .where(eq(products.id, id));
+    const updateData = {
+      ...(product.name !== undefined && { name: product.name }),
+      ...(product.category !== undefined && { category: product.category }),
+      ...(product.description !== undefined && { description: product.description }),
+      ...(product.price !== undefined && { price: product.price }),
+      ...(product.images !== undefined && { images: product.images }),
+      ...(product.colors !== undefined && { colors: product.colors }),
+      ...(product.sizes !== undefined && { sizes: product.sizes }),
+      ...(product.stockByColor !== undefined && { stockByColor: product.stockByColor }),
+      ...(product.sareeType !== undefined && { sareeType: product.sareeType }),
+      ...(product.blouseMaterialType !== undefined && {
+        blouseMaterialType: product.blouseMaterialType,
+      }),
+      ...(product.lengthInches !== undefined && { lengthInches: product.lengthInches }),
+      ...(product.widthInches !== undefined && { widthInches: product.widthInches }),
+      ...(product.readyBlouseTypes !== undefined && {
+        readyBlouseTypes: product.readyBlouseTypes,
+      }),
+    };
+
+    await db.update(products).set(updateData).where(eq(products.id, id));
 
     return this.getProduct(id);
   }
@@ -85,7 +114,6 @@ export class Storage {
       ...order,
       id: randomUUID(),
       status: "Pending",
-      createdAt: new Date().toISOString(),
     };
 
     await db.insert(orders).values(newOrder as any);
@@ -119,19 +147,21 @@ export class Storage {
 
     if (!product) throw new Error("Product not found");
 
-    const stock = (product.stockByColor as Record<string, number>) || {};
-
+    const stock = (product.stockByColor ?? {}) as Record<string, number>;
     const current = stock[color] || 0;
 
     if (current < qty) {
       throw new Error("Out of stock");
     }
 
-    stock[color] = current - qty;
+    const updatedStock = {
+      ...stock,
+      [color]: current - qty,
+    };
 
     await db
       .update(products)
-      .set({ stockByColor: stock })
+      .set({ stockByColor: updatedStock })
       .where(eq(products.id, productId));
   }
 
